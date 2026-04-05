@@ -1,7 +1,7 @@
 /**
  * server/search.js
  *
- * Zero-configuration natural-language search over locally synced pins and videos.
+ * Zero-configuration natural-language search over locally synced Pinterest pins.
  * No API keys. No external calls. Runs entirely offline.
  *
  * Pipeline per query:
@@ -485,16 +485,6 @@ function buildPinCorpus(pin) {
   ].filter(f => f.text).map(f => ({ ...f, lower: f.text.toLowerCase() }));
 }
 
-function buildVideoCorpus(video) {
-  return [
-    { text: video.title,                                  w: FIELD_WEIGHTS.title   },
-    { text: video.channel_title,                          w: FIELD_WEIGHTS.primary },
-    { text: video.description,                            w: FIELD_WEIGHTS.desc    },
-    { text: (video.tags ?? []).join(' '),                 w: FIELD_WEIGHTS.tags    },
-    { text: (video.topic_categories ?? []).join(' '),     w: FIELD_WEIGHTS.misc    },
-  ].filter(f => f.text).map(f => ({ ...f, lower: f.text.toLowerCase() }));
-}
-
 const WORD_BOUNDARY = /\b/;
 
 function tokeniseField(text) {
@@ -561,15 +551,12 @@ function loadJSON(file) {
 }
 
 export function loadData() {
-  const pinsData   = loadJSON('pins.json');
-  const videosData = loadJSON('videos.json');
+  const pinsData = loadJSON('pins.json');
   return {
-    pins:       pinsData?.pins    ?? [],
-    boards:     pinsData?.boards  ?? [],
-    pinsUser:   pinsData?.username  ?? null,
-    pinsSync:   pinsData?.synced_at ?? null,
-    videos:     videosData?.videos  ?? [],
-    videosSync: videosData?.synced_at ?? null,
+    pins:     pinsData?.pins    ?? [],
+    boards:   pinsData?.boards  ?? [],
+    pinsUser: pinsData?.username  ?? null,
+    pinsSync: pinsData?.synced_at ?? null,
   };
 }
 
@@ -578,42 +565,31 @@ export function loadData() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Search pins and videos with a natural language query.
+ * Search pins with a natural language query.
  *
  * @param {string} query
  * @param {object} options
- * @param {number} [options.limit=20]       - max results
- * @param {string} [options.type='both']    - 'pins' | 'videos' | 'both'
- * @param {number} [options.minScore=1]     - drop items below this score
+ * @param {number} [options.limit=20]    - max results
+ * @param {number} [options.minScore=1]  - drop items below this score
  * @returns {{ results, queryTokens, expandedCount, totalSearched }}
  */
-export function searchReferences(query, { limit = 20, type = 'both', minScore = 1 } = {}) {
+export function searchReferences(query, { limit = 20, minScore = 1 } = {}) {
   const data = loadData();
 
   const rawTokens = tokenise(query);
   if (rawTokens.length === 0) {
     return { results: [], queryTokens: [], expandedCount: 0,
-             totalSearched: { pins: data.pins.length, videos: data.videos.length } };
+             totalSearched: { pins: data.pins.length } };
   }
 
   const { stemmedTokens, expandedTerms, clusterIndices } = expandQuery(rawTokens);
 
   const scored = [];
 
-  if (type !== 'videos') {
-    for (const pin of data.pins) {
-      const corpus = buildPinCorpus(pin);
-      const s = scoreItem(corpus, stemmedTokens, expandedTerms, query, clusterIndices);
-      if (s >= minScore) scored.push({ type: 'pin', score: s, item: formatPin(pin) });
-    }
-  }
-
-  if (type !== 'pins') {
-    for (const video of data.videos) {
-      const corpus = buildVideoCorpus(video);
-      const s = scoreItem(corpus, stemmedTokens, expandedTerms, query, clusterIndices);
-      if (s >= minScore) scored.push({ type: 'video', score: s, item: formatVideo(video) });
-    }
+  for (const pin of data.pins) {
+    const corpus = buildPinCorpus(pin);
+    const s = scoreItem(corpus, stemmedTokens, expandedTerms, query, clusterIndices);
+    if (s >= minScore) scored.push({ type: 'pin', score: s, item: formatPin(pin) });
   }
 
   scored.sort((a, b) => b.score - a.score);
@@ -622,10 +598,7 @@ export function searchReferences(query, { limit = 20, type = 'both', minScore = 
     results:       scored.slice(0, limit),
     queryTokens:   rawTokens,
     expandedCount: expandedTerms.length - stemmedTokens.length,
-    totalSearched: {
-      pins:   type !== 'videos' ? data.pins.length   : 0,
-      videos: type !== 'pins'   ? data.videos.length : 0,
-    },
+    totalSearched: { pins: data.pins.length },
   };
 }
 
@@ -655,33 +628,14 @@ function formatPin(pin) {
   };
 }
 
-function formatVideo(video) {
-  return {
-    id:          video.id,
-    type:        'video',
-    title:       video.title,
-    channel:     video.channel_title,
-    channel_url: video.channel_url,
-    url:         video.url,
-    thumbnail:   video.thumbnail,
-    duration:    video.duration,
-    view_count:  video.view_count_text,
-    published:   video.published_text,
-    tags:        video.tags?.slice(0, 10) ?? [],
-    topics:      video.topic_categories?.slice(0, 5) ?? [],
-  };
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Accessors used by other tools
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function getAllPins()    { return loadData().pins.map(formatPin); }
-export function getAllVideos()  { return loadData().videos.map(formatVideo); }
+export function getAllPins() { return loadData().pins.map(formatPin); }
 export function getDataSummary() {
   const d = loadData();
   return {
-    pins:   { total: d.pins.length,   boards: d.boards.length, synced_at: d.pinsSync },
-    videos: { total: d.videos.length, synced_at: d.videosSync },
+    pins: { total: d.pins.length, boards: d.boards.length, synced_at: d.pinsSync },
   };
 }

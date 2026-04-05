@@ -1,15 +1,15 @@
 /**
  * server/viz.js
  *
- * Generates a human-readable breakdown of the local reference library —
- * boards, channels, colors, topics — formatted as text Claude can present.
+ * Generates a human-readable breakdown of the Pinterest pin library —
+ * boards, colours, source sites — formatted as text Claude can present.
  */
 
 import { loadData } from './search.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
-// ─────────────────────────────────────────────────────────────────────────────
+// ���────────────────────────────────────────────────────────────────────────────
 
 /** Count occurrences of a key across an array of objects. */
 function countBy(arr, keyFn) {
@@ -48,7 +48,7 @@ function renderRanked(entries, total, { label = 'Item', topN = 12, barWidth = 20
   return rows.join('\n') + '\n';
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ���────────────────────────────────────────────────────────────────────────────
 // Colour grouping
 // Dominant colours come in as hex codes — map them to broad colour families.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -71,7 +71,6 @@ function hexToColorFamily(hex) {
   if (lightness < 0.12) return '⬛ black / near-black';
   if (saturation < 0.12) return '▪️  grey / neutral';
 
-  // Hue calculation
   const dr = (max - r) / (max - min);
   const dg = (max - g) / (max - min);
   const db = (max - b) / (max - min);
@@ -101,11 +100,11 @@ function hexToColorFamily(hex) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function pinsBreakdown(pins, boards) {
-  if (pins.length === 0) return '  No pins synced yet. Run: npm run sync:pinterest\n';
+  if (pins.length === 0) return '  No pins synced yet. Run: npm run sync\n';
 
-  const byBoard   = countBy(pins,  (p) => p.board_name);
-  const byColor   = countBy(pins,  (p) => hexToColorFamily(p.dominant_color));
-  const byDomain  = countBy(pins,  (p) => p.rich_metadata?.site_name ?? extractDomain(p.link));
+  const byBoard   = countBy(pins, (p) => p.board_name);
+  const byColor   = countBy(pins, (p) => hexToColorFamily(p.dominant_color));
+  const byDomain  = countBy(pins, (p) => p.rich_metadata?.site_name ?? extractDomain(p.link));
   const withImage = pins.filter((p) => p.image_url).length;
   const withLink  = pins.filter((p) => p.link).length;
 
@@ -128,59 +127,15 @@ function pinsBreakdown(pins, boards) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// YouTube breakdown
-// ─────────────────────────────────────────────────────────────────────────────
-
-function videosBreakdown(videos) {
-  if (videos.length === 0) return '  No videos synced yet. Run: npm run sync:youtube\n';
-
-  const byChannel = countBy(videos, (v) => v.channel_title);
-  const byTopic   = countBy(videos, (v) => v.topic_categories?.[0] ?? null);
-
-  // Duration bucketing
-  const durationBuckets = { '< 5 min': 0, '5–15 min': 0, '15–30 min': 0, '30–60 min': 0, '> 1 hour': 0, unknown: 0 };
-  for (const video of videos) {
-    const secs = parseDurationToSeconds(video.duration);
-    if (secs === null)       durationBuckets['unknown']++;
-    else if (secs < 300)     durationBuckets['< 5 min']++;
-    else if (secs < 900)     durationBuckets['5–15 min']++;
-    else if (secs < 1800)    durationBuckets['15–30 min']++;
-    else if (secs < 3600)    durationBuckets['30–60 min']++;
-    else                     durationBuckets['> 1 hour']++;
-  }
-  const durationEntries = Object.entries(durationBuckets).filter(([, c]) => c > 0);
-  const maxDuration = Math.max(...durationEntries.map(([, c]) => c));
-
-  const lines = [];
-  lines.push(`  Total liked videos: ${videos.length}\n`);
-
-  lines.push('  ── By channel ──');
-  lines.push(renderRanked(byChannel, videos.length, { label: 'Channel', topN: 15 }));
-
-  if (byTopic.length > 0) {
-    lines.push('  ── By topic category ──');
-    lines.push(renderRanked(byTopic, videos.length, { label: 'Topic', topN: 10, barWidth: 16 }));
-  }
-
-  lines.push('  ── By duration ──');
-  lines.push(durationEntries.map(([label, count]) =>
-    `  ${bar(count, maxDuration, 16)}  ${count.toString().padStart(4)}  ${pct(count, videos.length).padStart(4)}  ${label}`
-  ).join('\n') + '\n');
-
-  return lines.join('\n');
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Public viz entry point
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function generateViz() {
-  const { pins, boards, videos, pinsSync, videosSync } = loadData();
+  const { pins, boards, pinsSync } = loadData();
 
-  const syncInfo = [
-    pinsSync   ? `Pinterest synced: ${new Date(pinsSync).toLocaleDateString()}` : 'Pinterest: not synced',
-    videosSync ? `YouTube synced: ${new Date(videosSync).toLocaleDateString()}` : 'YouTube: not synced',
-  ].join('   ');
+  const syncInfo = pinsSync
+    ? `Pinterest synced: ${new Date(pinsSync).toLocaleDateString()}`
+    : 'Pinterest: not synced';
 
   const lines = [
     '╔══════════════════════════════════════════════════════════════╗',
@@ -192,19 +147,16 @@ export function generateViz() {
     '┌─ Pinterest pins ──────────────────────────────────────────────',
     '',
     pinsBreakdown(pins, boards),
-    '┌─ YouTube liked videos ───────────────────────────────────────',
-    '',
-    videosBreakdown(videos),
     '└──────────────────────────────────────────────────────────────',
     '',
-    `  Combined library: ${pins.length + videos.length} references`,
+    `  Library: ${pins.length} pins across ${boards.length} boards`,
     '',
   ];
 
   return lines.join('\n');
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ──────────────���──────────────────────────────────────────────────────────────
 // Utility
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -215,36 +167,4 @@ function extractDomain(url) {
   } catch {
     return null;
   }
-}
-
-/** Parse duration strings like "4:20", "1:02:33", "4m 20s", "PT4M20S" → seconds. */
-function parseDurationToSeconds(str) {
-  if (!str) return null;
-
-  // HH:MM:SS or MM:SS
-  const colonMatch = str.match(/^(?:(\d+):)?(\d+):(\d+)$/);
-  if (colonMatch) {
-    const h = parseInt(colonMatch[1] ?? 0);
-    const m = parseInt(colonMatch[2]);
-    const s = parseInt(colonMatch[3]);
-    return h * 3600 + m * 60 + s;
-  }
-
-  // ISO 8601 PT4M20S
-  const isoMatch = str.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
-  if (isoMatch) {
-    return (parseInt(isoMatch[1] ?? 0)) * 3600 +
-           (parseInt(isoMatch[2] ?? 0)) * 60  +
-           (parseInt(isoMatch[3] ?? 0));
-  }
-
-  // "4m 20s" / "4m" / "20s"
-  const humanMatch = str.match(/(?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:(\d+)s)?/i);
-  if (humanMatch && (humanMatch[1] || humanMatch[2] || humanMatch[3])) {
-    return (parseInt(humanMatch[1] ?? 0)) * 3600 +
-           (parseInt(humanMatch[2] ?? 0)) * 60  +
-           (parseInt(humanMatch[3] ?? 0));
-  }
-
-  return null;
 }

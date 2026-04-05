@@ -6,9 +6,8 @@
   "main": "server/index.js",
   "scripts": {
     "start": "node server/index.js",
-    "sync:pinterest": "node sync/pinterest.js",
-    "sync:youtube": "node sync/youtube.js",
-    "sync:all": "node sync/pinterest.js && node sync/youtube.js"
+    "sync": "node sync/pinterest.js",
+    "sync:pinterest": "node sync/pinterest.js"
   },
   "keywords": [
     "mcp",
