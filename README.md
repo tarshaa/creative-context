@@ -1,8 +1,8 @@
 # creative-context
 
-Your saved Pinterest pins, searchable by Claude.
+A local MCP server that syncs your saved Pinterest pins and makes them searchable inside Claude.
 
-Save something to Pinterest, run a one-line sync, and Claude can immediately find it for you — by mood, aesthetic, topic, or vibe. No typing through your boards. No scrolling through hundreds of pins. Just ask.
+Save something to Pinterest, run a one-line sync, and Claude can immediately find it for you — by mood, aesthetic, topic, or vibe. No API keys. No configuration. Just be logged into Pinterest in your browser.
 
 ---
 
