@@ -1,0 +1,28 @@
+{
+  "name": "creative-context",
+  "version": "0.1.0",
+  "description": "MCP server that syncs Pinterest pins and YouTube liked videos locally for use as creative references in Claude",
+  "type": "module",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "sync:pinterest": "node sync/pinterest.js",
+    "sync:youtube": "node sync/youtube.js",
+    "sync:all": "node sync/pinterest.js && node sync/youtube.js"
+  },
+  "keywords": [
+    "mcp",
+    "claude",
+    "pinterest",
+    "youtube",
+    "creative-reference"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.82.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "dotenv": "^17.4.1",
+    "googleapis": "^171.4.0",
+    "zod": "^4.3.6"
+  }
+}
