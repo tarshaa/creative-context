@@ -146,12 +146,21 @@ function querySQLite(dbPath, sql) {
   let pathToQuery = dbPath;
   let tempPath = null;
 
-  // If the DB is locked (browser is open), copy to a temp file first
+  // If the DB is locked (browser is open), copy to a temp file first.
+  // Must also copy the WAL and SHM sidecar files — Chrome uses SQLite WAL
+  // mode, so recent cookie writes live in Cookies-wal, not the main DB.
+  // Copying only the main file gives stale/incomplete cookies.
   try {
     execFileSync('sqlite3', [dbPath, 'SELECT 1;'], { stdio: 'pipe' });
   } catch {
     tempPath = join(tmpdir(), `browser-cookies-${Date.now()}.db`);
     copyFileSync(dbPath, tempPath);
+    for (const suffix of ['-wal', '-shm']) {
+      const sidecar = dbPath + suffix;
+      if (existsSync(sidecar)) {
+        try { copyFileSync(sidecar, tempPath + suffix); } catch {}
+      }
+    }
     pathToQuery = tempPath;
   }
 
@@ -162,7 +171,9 @@ function querySQLite(dbPath, sql) {
     return raw ? JSON.parse(raw) : [];
   } finally {
     if (tempPath) {
-      try { unlinkSync(tempPath); } catch {}
+      for (const suffix of ['', '-wal', '-shm']) {
+        try { unlinkSync(tempPath + suffix); } catch {}
+      }
     }
   }
 }
