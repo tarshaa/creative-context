@@ -288,7 +288,7 @@ server.tool(
       results.push(`Syncing ${name}…`);
 
       try {
-        const args = ['--input-type=module', scriptPath];
+        const args = [scriptPath];
         if (browser !== 'auto') args.push('--browser', browser);
 
         const output = execFileSync(process.execPath, args, {
