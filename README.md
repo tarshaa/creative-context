@@ -67,29 +67,15 @@ Saved 312 pins from 8 boards
 
 ### Step 3 — Connect to Claude
 
-Open the file at:
-```
-~/.claude/claude_desktop_config.json
-```
+Still in Terminal, run:
 
-Add this inside the `mcpServers` section (create the file if it doesn't exist):
-
-```json
-{
-  "mcpServers": {
-    "creative-context": {
-      "command": "node",
-      "args": ["/Users/YOUR_USERNAME/creative-context/server/index.js"]
-    }
-  }
-}
+```
+npm run setup
 ```
 
-Replace `YOUR_USERNAME` with your Mac username.
+This writes the MCP config automatically using your current directory path. No manual editing required.
 
-### Step 4 — Restart Claude
-
-Quit the Claude desktop app completely and reopen it. Claude will now have access to your reference library.
+Then quit the Claude desktop app completely and reopen it. Claude will now have access to your reference library.
 
 ---
 

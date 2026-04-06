@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node server/index.js",
     "sync": "node sync/pinterest.js",
-    "sync:pinterest": "node sync/pinterest.js"
+    "sync:pinterest": "node sync/pinterest.js",
+    "setup": "node setup.js"
   },
   "keywords": [
     "mcp",
