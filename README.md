@@ -31,6 +31,8 @@ Claude searches by meaning, not just keywords. It understands that "moody" relat
 ---
 
 ## Installation
+git clone https://github.com/tarshaa/creative-context
+cd creative-context
 
 ### Step 1 — Download and set up
 
