@@ -39,7 +39,8 @@ cd creative-context
 Open Terminal (press `⌘ Space`, type "Terminal", press Enter) and run these two lines:
 
 ```
-cd ~/creative-context
+git clone https://github.com/tarshaa/creative-context
+cd creative-context
 npm install
 ```
 
