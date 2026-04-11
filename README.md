@@ -56,14 +56,22 @@ npm run sync
 
 This reads your browser session (the same way you're already logged in to Pinterest) and copies everything to your Mac. It doesn't ask for passwords. It just reads the session your browser already has open.
 
-The first sync takes a few minutes if you have a lot of saves. You'll see it counting as it goes:
+The first sync takes a few minutes if you have a lot of saves. You'll see it counting as it goes, then a summary of what was synced:
 
 ```
 Starting Pinterest sync...
-  Fetched 100 pins...
-  Fetched 200 pins...
   Fetched 312 pins...
-Saved 312 pins from 8 boards
+────────────────────────────────────────────────────
+Sync summary
+────────────────────────────────────────────────────
+  ✓  "Inspiration"  180 pin(s)
+  ✓  "Typography"   132 pin(s)
+  ✗  "Fun"          (secret — skipped)
+  ✗  "Moodboard"    (secret — skipped)
+────────────────────────────────────────────────────
+  312 pin(s) synced from 2 public board(s)
+  2 secret board(s) skipped (Pinterest OAuth required)
+────────────────────────────────────────────────────
 ```
 
 ### Step 3 — Connect to Claude
@@ -149,6 +157,12 @@ Claude will run the sync and tell you how many pins were pulled in.
 Everything stays on your Mac. Nothing is sent to any server. The `data/` folder inside creative-context contains your pins as plain text files — you can open them in any text editor and see exactly what's stored.
 
 The only network requests are the ones going to Pinterest during a sync, using your existing logged-in session.
+
+---
+
+## Limitations
+
+**Secret boards are not synced.** Pinterest's API blocks access to secret board pins unless you authenticate via Pinterest's official OAuth — cookie-based sessions aren't enough. The sync will detect your secret boards and tell you how many were skipped, but their pins won't be included. Only your public boards are synced.
 
 ---
 

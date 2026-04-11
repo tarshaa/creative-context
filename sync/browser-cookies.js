@@ -198,15 +198,17 @@ function readChromiumCookies(browser, domain, cookieNames) {
   const key = getChromiumKey(browser);
   const dbVersion = getChromiumDBVersion(dbPath);
 
-  const nameList = cookieNames.map((n) => `'${n.replace(/'/g, "''")}'`).join(', ');
-  const sql = `
-    SELECT name, hex(encrypted_value) AS encrypted_hex, value
-    FROM cookies
-    WHERE host_key LIKE '%${domain}'
-      AND name IN (${nameList});
-  `.trim();
+  // cookieNames=[] means fetch every cookie for the domain
+  const sql = cookieNames.length > 0
+    ? `SELECT name, hex(encrypted_value) AS encrypted_hex, value
+       FROM cookies
+       WHERE host_key LIKE '%${domain}'
+         AND name IN (${cookieNames.map((n) => `'${n.replace(/'/g, "''")}'`).join(', ')});`
+    : `SELECT name, hex(encrypted_value) AS encrypted_hex, value
+       FROM cookies
+       WHERE host_key LIKE '%${domain}';`;
 
-  const rows = querySQLite(dbPath, sql);
+  const rows = querySQLite(dbPath, sql.trim());
   if (rows.length === 0) return null; // not logged in with this browser
 
   const result = {};
@@ -260,12 +262,10 @@ function readFirefoxCookies(domain, cookieNames) {
   const dbPath = findFirefoxProfile();
   if (!dbPath) return null;
 
-  const nameList = cookieNames.map((n) => `'${n.replace(/'/g, "''")}'`).join(', ');
-  const sql = `
-    SELECT name, value FROM moz_cookies
-    WHERE host LIKE '%${domain}'
-      AND name IN (${nameList});
-  `.trim();
+  // cookieNames=[] means fetch every cookie for the domain
+  const sql = cookieNames.length > 0
+    ? `SELECT name, value FROM moz_cookies WHERE host LIKE '%${domain}' AND name IN (${cookieNames.map((n) => `'${n.replace(/'/g, "''")}'`).join(', ')});`
+    : `SELECT name, value FROM moz_cookies WHERE host LIKE '%${domain}';`;
 
   try {
     const rows = querySQLite(dbPath, sql);
@@ -358,10 +358,11 @@ function readSafariCookies(domain, cookieNames) {
     return null;
   }
 
-  const nameSet = new Set(cookieNames);
+  // cookieNames=[] means fetch every cookie for the domain
+  const nameSet = cookieNames.length > 0 ? new Set(cookieNames) : null;
   const result = {};
   for (const cookie of allCookies) {
-    if (cookie.domain.includes(domain) && nameSet.has(cookie.name)) {
+    if (cookie.domain.includes(domain) && (nameSet === null || nameSet.has(cookie.name))) {
       result[cookie.name] = cookie.value;
     }
   }
